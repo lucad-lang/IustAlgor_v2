@@ -29,7 +29,7 @@ try:
 except:
     api_key = None
 
-# --- 4. LOGICA DI ACCESSO (CREDENZIALI AGGIORNATE) ---
+# --- 4. LOGICA DI ACCESSO (Username: username | Password: password) ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
@@ -39,7 +39,6 @@ if not st.session_state.logged_in:
     password_input = st.text_input("Password", type="password")
     
     if st.button("Attiva Sessione"):
-        # Modificato come richiesto: username e password
         if user_input == "username" and password_input == "password":
             st.session_state.logged_in = True
             st.session_state.user_name = user_input
@@ -69,9 +68,13 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.rerun()
 
-# --- 6. CHAT INTERFACCIA ---
+# --- 6. CHAT INTERFACCIA CON LOGO GEMINI ---
 st.title("⚖️ IusAlgor Pro")
 st.caption(f"Operatore in sessione: {st.session_state.user_name}")
+
+# Link al logo ufficiale di Gemini per l'avatar
+LOGO_GEMINI = "https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d47353047313830.svg"
+AVATAR_UTENTE = "👤"
 
 if api_key:
     genai.configure(api_key=api_key)
@@ -79,28 +82,30 @@ if api_key:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Visualizzazione messaggi con avatar personalizzati
     for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
+        avatar = LOGO_GEMINI if message["role"] == "assistant" else AVATAR_UTENTE
+        with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
 
     if prompt := st.chat_input("Chiedi a IusAlgor..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
+        with st.chat_message("user", avatar=AVATAR_UTENTE):
             st.markdown(prompt)
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=LOGO_GEMINI):
             try:
-                # Logica di risposta intelligente
+                # Logica istruzioni di sistema
                 if uploaded_file is not None:
                     sys_instr = (
-                        f"Sei IusAlgor Pro. L'operatore {st.session_state.user_name} ha caricato un file. "
-                        "Analizzalo con rigore legale. Usa SEMPRE le sezioni: 🎯 AMBITI, ⚠️ RISCHI, 💡 AZIONI CORRETTIVE."
+                        f"Sei IusAlgor Pro, alimentato da Google Gemini. L'operatore {st.session_state.user_name} ha fornito un file. "
+                        "Esegui un audit rigoroso. Usa SEMPRE i titoli: 🎯 AMBITI, ⚠️ RISCHI, 💡 AZIONI CORRETTIVE."
                     )
                 else:
                     sys_instr = (
                         f"Sei IusAlgor Pro. Rispondi cordialmente a {st.session_state.user_name}. "
-                        "Non usare icone di analisi o sezioni tecniche (Ambiti/Rischi) se non c'è un file caricato. "
-                        "Invita l'utente a caricare un documento per iniziare l'audit."
+                        "NON usare icone di analisi o titoli tecnici se non c'è un file caricato. "
+                        "Invita l'utente a caricare un documento per l'audit di conformità."
                     )
 
                 model = genai.GenerativeModel(
@@ -115,7 +120,7 @@ if api_key:
                 
                 chat = model.start_chat(history=history)
 
-                with st.spinner(f'Analisi in corso...'):
+                with st.spinner(f'Gemini sta elaborando...'):
                     if uploaded_file is not None:
                         ext = os.path.splitext(uploaded_file.name)[1]
                         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
@@ -132,6 +137,6 @@ if api_key:
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
 
             except Exception as e:
-                st.error(f"❌ Errore: {str(e)}")
+                st.error(f"❌ Errore tecnico: {str(e)}")
 else:
-    st.info("👈 Configura l'API Key nei Secrets di Streamlit o nella sidebar.")
+    st.info("👈 Configura l'API Key nei Secrets o nella sidebar per iniziare.")
