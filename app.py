@@ -29,22 +29,27 @@ try:
 except:
     api_key = None
 
-# --- 4. LOGICA DI ACCESSO ---
+# --- 4. LOGICA DI ACCESSO DINAMICA ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
     st.title("🔐 Accesso Sistema IusAlgor")
-    user_input = st.text_input("Username")
-    password_input = st.text_input("Password", type="password")
+    
+    # Qui l'utente sceglie come farsi chiamare
+    user_chosen_name = st.text_input("Inserisci il tuo Nome Operatore")
+    password_input = st.text_input("Password di Sistema", type="password")
     
     if st.button("Attiva Sessione"):
-        if user_input == "username" and password_input == "password":
+        # Controlliamo solo la password, accettiamo qualsiasi nome non vuoto
+        if password_input == "password" and user_chosen_name.strip() != "":
             st.session_state.logged_in = True
-            st.session_state.user_name = user_input
+            st.session_state.user_name = user_chosen_name
             st.rerun()
+        elif user_chosen_name.strip() == "":
+            st.warning("Per favore, inserisci un nome operatore.")
         else:
-            st.error("Credenziali non valide")
+            st.error("Password errata.")
     st.stop()
 
 # --- 5. SIDEBAR ---
@@ -52,6 +57,7 @@ with st.sidebar:
     if os.path.exists("logo.png"):
         st.image(Image.open('logo.png'), width=250)
     
+    # Mostra il nome scelto dall'utente
     st.header(f"👤 {st.session_state.user_name}")
     st.markdown("---")
     
@@ -61,17 +67,16 @@ with st.sidebar:
     uploaded_file = st.file_uploader("📂 Carica Documento", type=['pdf', 'txt'])
     st.markdown("---")
     toggle_dettaglio = st.toggle("Analisi Approfondita", value=True)
-    livello_dettaglio = "Completa" if toggle_dettaglio else "Riassuntiva"
     
-    if st.button("Esci"):
+    if st.button("Termina Sessione"):
         st.session_state.logged_in = False
         st.rerun()
 
-# --- 6. CHAT INTERFACCIA (USANDO FILE LOCALE) ---
+# --- 6. CHAT INTERFACCIA ---
 st.title("⚖️ IusAlgor Pro")
+st.caption(f"Operatore in sessione: {st.session_state.user_name}")
 
-# Definiamo gli avatar. 
-# Se il file gemini_logo.png non esiste sul tuo GitHub, userà l'emoji ✨ per non mostrare l'errore.
+# Gestione Avatar (File locale se esiste, altrimenti emoji)
 AVATAR_AI = "gemini_logo.png" if os.path.exists("gemini_logo.png") else "✨"
 AVATAR_USER = "👤"
 
@@ -86,23 +91,30 @@ if api_key:
         with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input("Chiedi a IusAlgor..."):
+    if prompt := st.chat_input(f"Chiedi a IusAlgor, {st.session_state.user_name}..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=AVATAR_USER):
             st.markdown(prompt)
 
         with st.chat_message("assistant", avatar=AVATAR_AI):
             try:
+                # L'IA ora sa esattamente chi la sta interrogando
                 if uploaded_file is not None:
-                    sys_instr = f"Sei IusAlgor Pro. L'operatore {st.session_state.user_name} ha caricato un file. Analizzalo con rigore legale usando obbligatoriamente i titoli: 🎯 AMBITI, ⚠️ RISCHI, 💡 AZIONI CORRETTIVE."
+                    sys_instr = (
+                        f"Sei IusAlgor Pro. Ti stai interfacciando con l'operatore {st.session_state.user_name}. "
+                        "Analizza il file caricato con rigore usando: 🎯 AMBITI, ⚠️ RISCHI, 💡 AZIONI CORRETTIVE."
+                    )
                 else:
-                    sys_instr = f"Sei IusAlgor Pro. Rispondi cordialmente a {st.session_state.user_name}. Non usare icone o sezioni tecniche di audit se non è stato caricato alcun file."
+                    sys_instr = (
+                        f"Sei IusAlgor Pro. Saluta cordialmente {st.session_state.user_name} e offri il tuo aiuto. "
+                        "Specifica che sei pronto ad analizzare i documenti caricati nella sidebar."
+                    )
 
                 model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
                 history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
                 chat = model.start_chat(history=history)
 
-                with st.spinner('Gemini sta elaborando...'):
+                with st.spinner('Elaborazione in corso...'):
                     if uploaded_file is not None:
                         ext = os.path.splitext(uploaded_file.name)[1]
                         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
