@@ -67,11 +67,12 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.rerun()
 
-# --- 6. CHAT INTERFACCIA (CON LINK PNG GEMINI) ---
+# --- 6. CHAT INTERFACCIA (USANDO FILE LOCALE) ---
 st.title("⚖️ IusAlgor Pro")
 
-# Link PNG stabile per il logo di Gemini
-AVATAR_AI = "https://i.imgur.com/7k799pP.png" 
+# Definiamo gli avatar. 
+# Se il file gemini_logo.png non esiste sul tuo GitHub, userà l'emoji ✨ per non mostrare l'errore.
+AVATAR_AI = "gemini_logo.png" if os.path.exists("gemini_logo.png") else "✨"
 AVATAR_USER = "👤"
 
 if api_key:
@@ -92,11 +93,10 @@ if api_key:
 
         with st.chat_message("assistant", avatar=AVATAR_AI):
             try:
-                # Istruzioni intelligenti (niente icone fisse se non c'è il file)
                 if uploaded_file is not None:
                     sys_instr = f"Sei IusAlgor Pro. L'operatore {st.session_state.user_name} ha caricato un file. Analizzalo con rigore legale usando obbligatoriamente i titoli: 🎯 AMBITI, ⚠️ RISCHI, 💡 AZIONI CORRETTIVE."
                 else:
-                    sys_instr = f"Sei IusAlgor Pro. Rispondi cordialmente a {st.session_state.user_name}. Non usare icone o sezioni tecniche di audit se non è stato caricato alcun file. Invita l'utente a caricare un documento per iniziare."
+                    sys_instr = f"Sei IusAlgor Pro. Rispondi cordialmente a {st.session_state.user_name}. Non usare icone o sezioni tecniche di audit se non è stato caricato alcun file."
 
                 model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
                 history = [{"role": "user" if m["role"] == "user" else "model", "parts": [m["content"]]} for m in st.session_state.messages[:-1]]
