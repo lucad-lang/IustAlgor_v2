@@ -13,7 +13,7 @@ st.set_page_config(page_title="IusAlgor Pro", page_icon="⚖️", layout="wide")
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# --- 3. SCHERMATA DI LOGIN (DESIGN MOBILE-FIRST NOTTURNO/ORO) ---
+# --- 3. SCHERMATA DI LOGIN (DESIGN NOTTURNO/ORO) ---
 if not st.session_state.logged_in:
     st.markdown("""
     <style>
@@ -23,12 +23,13 @@ if not st.session_state.logged_in:
     [data-testid="collapsedControl"], section[data-testid="stSidebar"], header {
         display: none !important;
     }
-    [data-testid="column"]:nth-of-type(2) {
+    .login-container {
         background-color: #FFFFFF !important;
-        padding: 40px 30px !important;
-        border-radius: 24px !important;
-        box-shadow: 0px 15px 35px rgba(0,0,0,0.6) !important;
-        margin-top: -15px;
+        padding: 40px 30px;
+        border-radius: 24px;
+        box-shadow: 0px 15px 35px rgba(0,0,0,0.6);
+        max-width: 450px;
+        margin: auto;
     }
     .welcome-title {
         color: #111827 !important; 
@@ -36,69 +37,48 @@ if not st.session_state.logged_in:
         font-weight: 900 !important;
         text-align: center;
         margin-bottom: 5px;
-        letter-spacing: 1px;
     }
     .welcome-sub {
         color: #6B7280 !important; 
         text-align: center;
-        font-size: 14px !important;
         margin-bottom: 25px;
     }
-    .stTextInput label p { color: #374151 !important; font-weight: 600; }
     div.stButton > button:first-child {
         background: linear-gradient(90deg, #E6B31E 0%, #D4AF37 100%) !important;
         color: #111827 !important;
-        border: none !important;
         border-radius: 30px !important;
-        padding: 12px !important;
-        width: 100% !important;
         font-weight: 800 !important;
-        font-size: 16px !important;
-        box-shadow: 0px 8px 15px rgba(212, 175, 55, 0.3) !important;
-        transition: transform 0.2s;
-    }
-    div.stButton > button:first-child:hover {
-        transform: scale(1.02);
+        width: 100% !important;
+        border: none;
     }
     </style>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
-
     with col2:
+        st.write("") # Spacer
         if os.path.exists("logo.png"):
             st.image("logo.png", use_container_width=True)
-        else:
-            st.markdown('<div style="height: 150px; background: rgba(255,255,255,0.1); border-radius: 15px; margin-bottom: 20px; text-align: center; line-height: 150px; color: white;">[Area Immagine]</div>', unsafe_allow_html=True)
-
+        
+        st.markdown('<div class="login-container">', unsafe_allow_html=True)
         st.markdown('<p class="welcome-title">WELCOME!</p>', unsafe_allow_html=True)
         st.markdown('<p class="welcome-sub">Accedi al sistema IusAlgor Pro</p>', unsafe_allow_html=True)
 
-        user_chosen_name = st.text_input("👤 email or username")
-        password_input = st.text_input("🔒 password", type="password")
-
-        c_left, c_right = st.columns(2)
-        with c_left:
-            st.checkbox("Remember me")
-        with c_right:
-            st.markdown('<p style="text-align: right; margin-top: 10px;"><a href="#" style="color: #111827; font-size: 14px; text-decoration: none; font-weight: bold;">Forgot password?</a></p>', unsafe_allow_html=True)
-
-        st.write("") 
+        user_input = st.text_input("👤 Email o Username", key="user_login")
+        pass_input = st.text_input("🔒 Password", type="password", key="pass_login")
 
         if st.button("NEXT →"):
-            if password_input == "password" and user_chosen_name.strip() != "":
+            if pass_input == "password" and user_input.strip() != "":
                 st.session_state.logged_in = True
-                st.session_state.user_name = user_chosen_name
-                st.rerun() 
-            elif user_chosen_name.strip() == "":
-                st.warning("Per favore, inserisci email o username.")
+                st.session_state.user_name = user_input
+                st.rerun()
             else:
-                st.error("Password errata.")
-                
-    st.stop() 
+                st.error("Credenziali non valide.")
+        st.markdown('</div>', unsafe_allow_html=True)
+    st.stop()
 
 # =====================================================================
-# DASHBOARD PRINCIPALE
+# DASHBOARD PRINCIPALE (UTENTE LOGGATO)
 # =====================================================================
 
 st.markdown("""
@@ -106,26 +86,21 @@ st.markdown("""
     .stApp { background-color: #1E2328; color: #FFFFFF; }
     section[data-testid="stSidebar"] { background-color: #0F172A !important; border-right: 1px solid #D4AF37; }
     h1, h2, h3, h4, h5, h6, label, .stMarkdown p { color: #D4AF37 !important; }
-    div.stButton > button {
+    
+    /* Bottoni Sidebar */
+    .stSidebar div.stButton > button {
         background-color: #14213D !important;
         color: #D4AF37 !important;
-        border: 2px solid #D4AF37 !important;
-        border-radius: 8px;
+        border: 1px solid #D4AF37 !important;
         font-weight: bold;
         width: 100%;
-    }
-    /* Stile specifico per il tasto finto operatore per farlo risaltare */
-    div.stButton > button[kind="secondary"] {
-        border: 2px solid #E6B31E !important;
-        color: #FFFFFF !important;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-try:
-    api_key = st.secrets["GEMINI_API_KEY"]
-except:
-    api_key = None
+# Recupero API Key
+api_key = st.secrets.get("GEMINI_API_KEY", None)
 
 with st.sidebar:
     if os.path.exists("logo.png"):
@@ -144,20 +119,16 @@ with st.sidebar:
             for f in uploaded_files:
                 st.markdown(f"**📄 {f.name}**")
                 if f.name.endswith('.txt'):
-                    testo = f.getvalue().decode("utf-8")
-                    st.text_area("Contenuto", testo, height=150, disabled=True, label_visibility="collapsed", key=f"txt_{f.name}")
+                    st.caption("Contenuto TXT caricato.")
                 elif f.name.endswith('.pdf'):
-                    base64_pdf = base64.b64encode(f.getvalue()).decode('utf-8')
-                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="250" type="application/pdf"></iframe>'
-                    st.markdown(pdf_display, unsafe_allow_html=True)
-                st.markdown("---")
-    
+                    st.caption("Anteprima PDF disponibile nel report.")
+
     st.markdown("---")
     
-    # --- NUOVO TASTO: PARLA CON UN OPERATORE (FINTO) ---
+    # --- TASTO: PARLA CON UN OPERATORE ---
     if st.button("🎧 Parla con un operatore"):
-        st.toast("Connessione ai server legali in corso...", icon="⏳")
-        st.info("⚠️ Ricerca professionista abilitato in corso. Siete il prossimo in lista d'attesa (Posizione: 1).")
+        st.toast("Connessione ai server legali...", icon="⏳")
+        st.info("⚠️ Posizione in coda: 1. Un professionista dello studio Giuseppe KTM sarà presto con lei.")
 
     if st.button("Svuota Chat"):
         st.session_state.messages = []
@@ -170,101 +141,72 @@ with st.sidebar:
 
     if "messages" in st.session_state and len(st.session_state.messages) > 0:
         st.markdown("---")
-        st.subheader("📄 Esporta Risultati")
-        
-        report_text = f"REPORT SESSIONE IUSALGOR PRO\n"
-        report_text += f"Operatore: {st.session_state.user_name}\n"
-        report_text += "="*30 + "\n\n"
-        
+        report_text = f"REPORT IUSALGOR PRO - Operatore: {st.session_state.user_name}\n" + "="*40 + "\n"
         for msg in st.session_state.messages:
             ruolo = "OPERATORE" if msg["role"] == "user" else "IUSALGOR"
-            report_text += f"[{ruolo}]:\n{msg['content']}\n"
-            report_text += "-"*20 + "\n"
+            report_text += f"[{ruolo}]: {msg['content']}\n\n"
+        
+        st.download_button("📥 Scarica Report", data=report_text, file_name="Analisi_IusAlgor.txt")
 
-        st.download_button(
-            label="📥 Scarica Cronologia (.txt)",
-            data=report_text,
-            file_name=f"Analisi_IusAlgor_{st.session_state.user_name}.txt",
-            mime="text/plain"
-        )
-
-# --- 7. CHAT INTERFACCIA ---
+# --- INTERFACCIA CHAT ---
 st.title("⚖️ IusAlgor Pro")
-st.caption(f"Operatore in sessione: {st.session_state.user_name}")
-
-AVATAR_AI = "gemini_logo.png" if os.path.exists("gemini_logo.png") else "✨"
-AVATAR_USER = "👤"
+st.caption(f"Operatore: {st.session_state.user_name} | Motore: Gemini 2.0 Flash")
 
 if api_key:
     genai.configure(api_key=api_key)
-    
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
+    # Visualizzazione messaggi
     for message in st.session_state.messages:
-        avatar = AVATAR_AI if message["role"] == "assistant" else AVATAR_USER
-        with st.chat_message(message["role"], avatar=avatar):
+        with st.chat_message(message["role"], avatar=("✨" if message["role"] == "assistant" else "👤")):
             st.markdown(message["content"])
 
-    if prompt := st.chat_input(f"Chiedi a IusAlgor, {st.session_state.user_name}..."):
+    # Input Utente
+    if prompt := st.chat_input("Chiedi un'analisi legale..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user", avatar=AVATAR_USER):
+        with st.chat_message("user", avatar="👤"):
             st.markdown(prompt)
 
-        with st.chat_message("assistant", avatar=AVATAR_AI):
+        with st.chat_message("assistant", avatar="✨"):
             try:
+                # Istruzioni di Sistema
                 sys_instr = (
-                    f"Sei IusAlgor Pro, un assistente legale esperto. Ti interfacci con l'operatore {st.session_state.user_name}. "
-                    "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
-                    "Usa il grassetto per i termini chiave o le leggi citate. "
-                    "Se ci sono più documenti, specifica a quale ti stai riferendo durante l'analisi. "
-                    "Struttura SEMPRE la tua risposta in queste tre sezioni esatte e NON aggiungere conclusioni o saluti finali:\n\n"
-                    "### AMBITI\n"
-                    "(Fornisci un elenco puntato degli ambiti legali/amministrativi coinvolti)\n\n"
-                    "### ⚠️ RISCHI\n"
-                    "(ASSOLUTAMENTE NON USARE TABELLE. Elenca i rischi rilevati usando questo formato strutturato per ciascun rischio:\n"
-                    "🔸 **[Nome o sintesi del Rischio]**\n"
-                    "   - **Gravità:** [Alta/Media/Bassa]\n"
-                    "   - **Riferimento:** [Cita la parte di testo o l'articolo coinvolto])\n\n"
-                    "### 💡 AZIONI CORRETTIVE\n"
-                    "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
+                    f"Sei IusAlgor Pro, assistente legale di {st.session_state.user_name}. "
+                    "Analizza i documenti forniti e rispondi rigorosamente in Markdown con questo schema:\n"
+                    "### AMBITI\n(Punti elenco)\n"
+                    "### ⚠️ RISCHI\n🔸 **[Titolo]**\n- Gravità: [X]\n- Riferimento: [Y]\n"
+                    "### 💡 AZIONI CORRETTIVE\n(Elenco numerato)"
                 )
 
                 model = genai.GenerativeModel(model_name='gemini-2.0-flash', system_instruction=sys_instr)
                 
-                with st.status("Elaborazione pratica in corso...", expanded=True) as status:
-                    content_to_send = [prompt]
-                    tmp_paths = [] 
+                with st.status("Analisi legale in corso...", expanded=True) as status:
+                    inputs = [prompt]
+                    temp_files = []
                     
                     if uploaded_files:
-                        st.write(f"📥 Preparazione di {len(uploaded_files)} documento/i...")
                         for f in uploaded_files:
                             with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(f.name)[1]) as tmp:
                                 tmp.write(f.getvalue())
-                                tmp_paths.append(tmp.name)
-                            st.write(f"☁️ Caricamento di {f.name}...")
-                            g_file = genai.upload_file(tmp_paths[-1])
+                                temp_files.append(tmp.name)
+                            g_file = genai.upload_file(temp_files[-1])
                             while g_file.state.name == "PROCESSING":
-                                st.write(f"⏳ Attesa estrazione testo per {f.name}...")
-                                time.sleep(3) 
-                                g_file = genai.get_file(g_file.name) 
-                            if g_file.state.name == "FAILED":
-                                st.error(f"❌ Impossibile leggere il file {f.name}")
-                                continue
-                            content_to_send.append(g_file)
+                                time.sleep(2)
+                                g_file = genai.get_file(g_file.name)
+                            inputs.append(g_file)
                     
-                    st.write("🧠 Analisi legale e stesura del responso in corso...")
-                    response = model.generate_content(content_to_send)
-                    status.update(label="Analisi completata con successo!", state="complete", expanded=False)
+                    response = model.generate_content(inputs)
+                    status.update(label="Audit completato!", state="complete")
                 
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
-                for path in tmp_paths:
-                    if os.path.exists(path):
-                        os.remove(path)
+                # Cleanup
+                for path in temp_files:
+                    if os.path.exists(path): os.remove(path)
                     
             except Exception as e:
-                st.error(f"Si è verificato un errore: {str(e)}")
+                st.error(f"Errore: {str(e)}")
 else:
-    st.info("👈 Configura l'API Key nella sidebar per iniziare.")
+    st.info("👈 Configura l'API Key nella sidebar.")
