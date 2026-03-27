@@ -148,8 +148,6 @@ with st.sidebar:
                 st.markdown("---")
     
     st.markdown("---")
-    
-    # PULSANTI DI AZIONE SIDEBAR
     if st.button("Svuota Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -158,10 +156,6 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.session_state.messages = [] 
         st.rerun()
-
-    # NUOVO PULSANTE FITTIZIO
-    if st.button("📞 Chiama un operatore"):
-        st.toast("Connessione con l'operatore legale in corso...", icon="⚖️")
 
     if "messages" in st.session_state and len(st.session_state.messages) > 0:
         st.markdown("---")
@@ -208,6 +202,7 @@ if api_key:
 
         with st.chat_message("assistant", avatar=AVATAR_AI):
             try:
+                # --- ISTRUZIONI DI SISTEMA AGGIORNATE: NIENTE PIÙ TABELLE ---
                 sys_instr = (
                     f"Sei IusAlgor Pro, un assistente legale esperto. Ti interfacci con l'operatore {st.session_state.user_name}. "
                     "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
@@ -219,13 +214,13 @@ if api_key:
                     "### ⚠️ RISCHI\n"
                     "(ASSOLUTAMENTE NON USARE TABELLE. Elenca i rischi rilevati usando questo formato strutturato per ciascun rischio:\n"
                     "🔸 **[Nome o sintesi del Rischio]**\n"
-                    "    - **Gravità:** [Alta/Media/Bassa]\n"
-                    "    - **Riferimento:** [Cita la parte di testo o l'articolo coinvolto])\n\n"
+                    "   - **Gravità:** [Alta/Media/Bassa]\n"
+                    "   - **Riferimento:** [Cita la parte di testo o l'articolo coinvolto])\n\n"
                     "### 💡 AZIONI CORRETTIVE\n"
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
 
-                model = genai.GenerativeModel(model_name='gemini-2.0-flash', system_instruction=sys_instr)
+                model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
                 
                 with st.status("Elaborazione pratica in corso...", expanded=True) as status:
                     content_to_send = [prompt]
@@ -258,6 +253,7 @@ if api_key:
                     
                     status.update(label="Analisi completata con successo!", state="complete", expanded=False)
                 
+                # Stampa diretta della risposta senza bisogno di pulizie strane
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
