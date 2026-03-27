@@ -2,6 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import os
 import tempfile
+import base64
 from PIL import Image
 
 # --- 1. CONFIGURAZIONE PAGINA ---
@@ -11,22 +12,21 @@ st.set_page_config(page_title="IusAlgor Pro", page_icon="⚖️", layout="wide")
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-# --- 3. SCHERMATA DI LOGIN (NUOVO DESIGN MOBILE-FIRST) ---
+# --- 3. SCHERMATA DI LOGIN (DESIGN MOBILE-FIRST NOTTURNO/ORO) ---
 if not st.session_state.logged_in:
-    # INIEZIONE CSS SPECIFICO PER IL LOGIN
     st.markdown("""
     <style>
-    /* Sfondo elegante (gradiente ardesia scuro/nero) per tutta la pagina */
+    /* Sfondo elegante ardesia scuro/nero */
     .stApp {
         background: linear-gradient(180deg, #0F172A 0%, #020617 100%) !important;
     }
     
-    /* Nasconde la barra laterale e i menu superiori durante il login */
+    /* Nasconde menu e sidebar durante il login */
     [data-testid="collapsedControl"], section[data-testid="stSidebar"], header {
         display: none !important;
     }
     
-    /* Crea la "Card Bianca" sulla colonna centrale */
+    /* Card centrale bianca */
     [data-testid="column"]:nth-of-type(2) {
         background-color: #FFFFFF !important;
         padding: 40px 30px !important;
@@ -35,7 +35,7 @@ if not st.session_state.logged_in:
         margin-top: -15px;
     }
     
-    /* Stile Titolo (Nero scuro elegante) */
+    /* Testi eleganti in scala di grigi */
     .welcome-title {
         color: #111827 !important; 
         font-size: 32px !important;
@@ -44,22 +44,18 @@ if not st.session_state.logged_in:
         margin-bottom: 5px;
         letter-spacing: 1px;
     }
-    
-    /* Stile Sottotitolo (Grigio medio) */
     .welcome-sub {
         color: #6B7280 !important; 
         text-align: center;
         font-size: 14px !important;
         margin-bottom: 25px;
     }
-    
-    /* Colore testo delle etichette (email, password) in grigio scuro */
     .stTextInput label p { color: #374151 !important; font-weight: 600; }
     
-    /* Stile del bottone NEXT -> (Oro elegante per richiamare il tema interno) */
+    /* Bottone dorato per richiamare il tema interno */
     div.stButton > button:first-child {
         background: linear-gradient(90deg, #E6B31E 0%, #D4AF37 100%) !important;
-        color: #111827 !important; /* Testo scuro per massimo contrasto sull'oro */
+        color: #111827 !important;
         border: none !important;
         border-radius: 30px !important;
         padding: 12px !important;
@@ -75,45 +71,40 @@ if not st.session_state.logged_in:
     </style>
     """, unsafe_allow_html=True)
 
-    # LAYOUT A COLONNE (Simula lo schermo stretto del mobile)
+    # Layout a colonne per centrare il login
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        # HERO AREA: Immagine IusAlgor
         if os.path.exists("logo.png"):
             st.image("logo.png", use_container_width=True)
         else:
-            # Placeholder se l'immagine non c'è
             st.markdown('<div style="height: 150px; background: rgba(255,255,255,0.1); border-radius: 15px; margin-bottom: 20px; text-align: center; line-height: 150px; color: white;">[Area Immagine]</div>', unsafe_allow_html=True)
 
-        # CONTENITORE FORM
         st.markdown('<p class="welcome-title">WELCOME!</p>', unsafe_allow_html=True)
         st.markdown('<p class="welcome-sub">Accedi al sistema IusAlgor Pro</p>', unsafe_allow_html=True)
 
         user_chosen_name = st.text_input("👤 email or username")
         password_input = st.text_input("🔒 password", type="password")
 
-        # RIGA: Remember me & Forgot Password
         c_left, c_right = st.columns(2)
         with c_left:
             st.checkbox("Remember me")
         with c_right:
             st.markdown('<p style="text-align: right; margin-top: 10px;"><a href="#" style="color: #111827; font-size: 14px; text-decoration: none; font-weight: bold;">Forgot password?</a></p>', unsafe_allow_html=True)
 
-        st.write("") # Spazio
+        st.write("") 
 
-        # BOTTONE E LOGICA DI ACCESSO
         if st.button("NEXT →"):
             if password_input == "password" and user_chosen_name.strip() != "":
                 st.session_state.logged_in = True
                 st.session_state.user_name = user_chosen_name
-                st.rerun() # Ricarica l'app per entrare nella dashboard
+                st.rerun() 
             elif user_chosen_name.strip() == "":
                 st.warning("Per favore, inserisci email o username.")
             else:
                 st.error("Password errata.")
                 
-    st.stop() # Ferma l'esecuzione qui finché non si è loggati
+    st.stop() 
 
 # =====================================================================
 # DA QUI IN POI: L'UTENTE È LOGGATO (DASHBOARD PRINCIPALE)
@@ -125,7 +116,6 @@ st.markdown("""
     .stApp { background-color: #1E2328; color: #FFFFFF; }
     section[data-testid="stSidebar"] { background-color: #0F172A !important; border-right: 1px solid #D4AF37; }
     h1, h2, h3, h4, h5, h6, label, .stMarkdown p { color: #D4AF37 !important; }
-    /* Stile base per i bottoni nella dashboard */
     div.stButton > button:first-child {
         background-color: #14213D !important;
         color: #D4AF37 !important;
@@ -154,14 +144,29 @@ with st.sidebar:
     if not api_key:
         api_key = st.text_input("🔑 API Key locale", type="password")
 
-    uploaded_file = st.file_uploader("📂 Carica Documento", type=['pdf', 'txt'])
+    # Caricamento file multipli
+    uploaded_files = st.file_uploader("📂 Carica Documenti", type=['pdf', 'txt'], accept_multiple_files=True)
+    
+    # Anteprima Documenti
+    if uploaded_files:
+        with st.expander("👀 Anteprima Documenti"):
+            for f in uploaded_files:
+                st.markdown(f"**📄 {f.name}**")
+                if f.name.endswith('.txt'):
+                    testo = f.getvalue().decode("utf-8")
+                    st.text_area("Contenuto", testo, height=150, disabled=True, label_visibility="collapsed", key=f"txt_{f.name}")
+                elif f.name.endswith('.pdf'):
+                    base64_pdf = base64.b64encode(f.getvalue()).decode('utf-8')
+                    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="250" type="application/pdf"></iframe>'
+                    st.markdown(pdf_display, unsafe_allow_html=True)
+                st.markdown("---")
     
     st.markdown("---")
-    if st.button("Svuota Chat"):
+    if st.button("🗑️ Nuova Analisi (Svuota Chat)"):
         st.session_state.messages = []
         st.rerun()
 
-    if st.button("Termina Sessione"):
+    if st.button("🚪 Termina Sessione"):
         st.session_state.logged_in = False
         st.session_state.messages = [] 
         st.rerun()
@@ -199,13 +204,11 @@ if api_key:
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Visualizza messaggi passati
     for message in st.session_state.messages:
         avatar = AVATAR_AI if message["role"] == "assistant" else AVATAR_USER
         with st.chat_message(message["role"], avatar=avatar):
             st.markdown(message["content"])
 
-    # Input utente e generazione risposta
     if prompt := st.chat_input(f"Chiedi a IusAlgor, {st.session_state.user_name}..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar=AVATAR_USER):
@@ -215,8 +218,9 @@ if api_key:
             try:
                 sys_instr = (
                     f"Sei IusAlgor Pro, un assistente legale esperto. Ti interfacci con l'operatore {st.session_state.user_name}. "
-                    "Quando analizzi un documento, restituisci l'output rigorosamente in formato Markdown. "
+                    "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
                     "Usa il grassetto per i termini chiave o le leggi citate. "
+                    "Se ci sono più documenti, specifica a quale ti stai riferendo durante l'analisi. "
                     "Struttura SEMPRE la tua risposta in queste tre sezioni esatte:\n\n"
                     "### 🎯 AMBITI\n"
                     "(Fornisci un elenco puntato degli ambiti legali/amministrativi coinvolti)\n\n"
@@ -226,23 +230,26 @@ if api_key:
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
 
-                model = genai.GenerativeModel(model_name='gemini-1.5-flash', system_instruction=sys_instr)
+                # MODELLO AGGIORNATO A GEMINI 2.5 FLASH
+                model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
                 
                 with st.status("Elaborazione pratica in corso...", expanded=True) as status:
                     content_to_send = [prompt]
-                    tmp_path = None
+                    tmp_paths = [] 
                     
-                    if uploaded_file is not None:
-                        st.write("📥 Preparazione del documento allegato...")
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp:
-                            tmp.write(uploaded_file.getvalue())
-                            tmp_path = tmp.name
+                    if uploaded_files:
+                        st.write(f"📥 Preparazione di {len(uploaded_files)} documento/i...")
                         
-                        st.write("☁️ Caricamento sul server sicuro IusAlgor...")
-                        g_file = genai.upload_file(tmp_path)
-                        content_to_send.append(g_file)
+                        for f in uploaded_files:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(f.name)[1]) as tmp:
+                                tmp.write(f.getvalue())
+                                tmp_paths.append(tmp.name)
+                            
+                            st.write(f"☁️ Caricamento sul server sicuro: {f.name}...")
+                            g_file = genai.upload_file(tmp_paths[-1])
+                            content_to_send.append(g_file)
                     
-                    st.write("🧠 Analisi legale e stesura del responso...")
+                    st.write("🧠 Analisi legale e stesura del responso in corso...")
                     response = model.generate_content(content_to_send)
                     
                     status.update(label="Analisi completata con successo!", state="complete", expanded=False)
@@ -250,8 +257,9 @@ if api_key:
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
-                if tmp_path and os.path.exists(tmp_path):
-                    os.remove(tmp_path)
+                for path in tmp_paths:
+                    if os.path.exists(path):
+                        os.remove(path)
                     
             except Exception as e:
                 st.error(f"Si è verificato un errore: {str(e)}")
