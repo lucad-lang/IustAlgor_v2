@@ -98,7 +98,7 @@ if not st.session_state.logged_in:
     st.stop() 
 
 # =====================================================================
-# DA QUI IN POI: L'UTENTE È LOGGATO (DASHBOARD PRINCIPALE)
+# DASHBOARD PRINCIPALE
 # =====================================================================
 
 st.markdown("""
@@ -106,13 +106,18 @@ st.markdown("""
     .stApp { background-color: #1E2328; color: #FFFFFF; }
     section[data-testid="stSidebar"] { background-color: #0F172A !important; border-right: 1px solid #D4AF37; }
     h1, h2, h3, h4, h5, h6, label, .stMarkdown p { color: #D4AF37 !important; }
-    div.stButton > button:first-child {
+    div.stButton > button {
         background-color: #14213D !important;
         color: #D4AF37 !important;
         border: 2px solid #D4AF37 !important;
         border-radius: 8px;
         font-weight: bold;
         width: 100%;
+    }
+    /* Stile specifico per il tasto finto operatore per farlo risaltare */
+    div.stButton > button[kind="secondary"] {
+        border: 2px solid #E6B31E !important;
+        color: #FFFFFF !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -148,6 +153,12 @@ with st.sidebar:
                 st.markdown("---")
     
     st.markdown("---")
+    
+    # --- NUOVO TASTO: PARLA CON UN OPERATORE (FINTO) ---
+    if st.button("🎧 Parla con un operatore"):
+        st.toast("Connessione ai server legali in corso...", icon="⏳")
+        st.info("⚠️ Ricerca professionista abilitato in corso. Siete il prossimo in lista d'attesa (Posizione: 1).")
+
     if st.button("Svuota Chat"):
         st.session_state.messages = []
         st.rerun()
@@ -202,7 +213,6 @@ if api_key:
 
         with st.chat_message("assistant", avatar=AVATAR_AI):
             try:
-                # --- ISTRUZIONI DI SISTEMA AGGIORNATE: NIENTE PIÙ TABELLE ---
                 sys_instr = (
                     f"Sei IusAlgor Pro, un assistente legale esperto. Ti interfacci con l'operatore {st.session_state.user_name}. "
                     "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
@@ -220,7 +230,7 @@ if api_key:
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
 
-                model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
+                model = genai.GenerativeModel(model_name='gemini-2.0-flash', system_instruction=sys_instr)
                 
                 with st.status("Elaborazione pratica in corso...", expanded=True) as status:
                     content_to_send = [prompt]
@@ -228,32 +238,25 @@ if api_key:
                     
                     if uploaded_files:
                         st.write(f"📥 Preparazione di {len(uploaded_files)} documento/i...")
-                        
                         for f in uploaded_files:
                             with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(f.name)[1]) as tmp:
                                 tmp.write(f.getvalue())
                                 tmp_paths.append(tmp.name)
-                            
                             st.write(f"☁️ Caricamento di {f.name}...")
                             g_file = genai.upload_file(tmp_paths[-1])
-                            
                             while g_file.state.name == "PROCESSING":
                                 st.write(f"⏳ Attesa estrazione testo per {f.name}...")
                                 time.sleep(3) 
                                 g_file = genai.get_file(g_file.name) 
-                            
                             if g_file.state.name == "FAILED":
                                 st.error(f"❌ Impossibile leggere il file {f.name}")
                                 continue
-                            
                             content_to_send.append(g_file)
                     
                     st.write("🧠 Analisi legale e stesura del responso in corso...")
                     response = model.generate_content(content_to_send)
-                    
                     status.update(label="Analisi completata con successo!", state="complete", expanded=False)
                 
-                # Stampa diretta della risposta senza bisogno di pulizie strane
                 st.markdown(response.text)
                 st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
