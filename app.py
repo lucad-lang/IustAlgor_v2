@@ -3,7 +3,7 @@ import google.generativeai as genai
 import os
 import tempfile
 import base64
-import time
+import timeF
 from PIL import Image
 
 # --- 1. CONFIGURAZIONE PAGINA ---
@@ -156,6 +156,12 @@ with st.sidebar:
         st.session_state.logged_in = False
         st.session_state.messages = [] 
         st.rerun()
+        # --- NUOVO TASTO OPERATORE ---
+    st.markdown("---")
+    if st.button("📞 PARLA CON UN OPERATORE"):
+        st.toast("Connessione in corso con il primo consulente disponibile...", icon="🎧")
+        time.sleep(1)
+        st.info("⚠️ Servizio momentaneamente occupato. Riprova più tardi.")
 
     if "messages" in st.session_state and len(st.session_state.messages) > 0:
         st.markdown("---")
@@ -204,20 +210,18 @@ if api_key:
             try:
                 # --- ISTRUZIONI DI SISTEMA AGGIORNATE: NIENTE PIÙ TABELLE ---
                 sys_instr = (
-                    f"Sei IusAlgor Pro, un assistente legale esperto. Ti interfacci con l'operatore {st.session_state.user_name}. "
-                    "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
-                    "Usa il grassetto per i termini chiave o le leggi citate. "
-                    "Se ci sono più documenti, specifica a quale ti stai riferendo durante l'analisi. "
-                    "Struttura SEMPRE la tua risposta in queste tre sezioni esatte e NON aggiungere conclusioni o saluti finali:\n\n"
-                    "### AMBITI\n"
-                    "(Fornisci un elenco puntato degli ambiti legali/amministrativi coinvolti)\n\n"
+                    f"Sei IusAlgor Pro, un assistente legale esperto in intelligenza artificiale. Ti interfacci con l'operatore {st.session_state.user_name}. "
+                    "FILTRO INERENZA: Se i documenti caricati o la domanda non riguardano minimamente l'IA, l'informatica giuridica o la tecnologia, "
+                    "comunica gentilmente che la tua analisi è limitata agli ambiti digitali e normativi dell'AI.\n\n"
+                    "FORMATO OUTPUT: Restituisci l'output rigorosamente in Markdown, usa il grassetto per leggi (es. AI Act, GDPR). "
+                    "Se ci sono più documenti, specifica a quale ti stai riferendo.\n\n"
+                    "STRUTTURA OBBLIGATORIA:\n"
+                    "### AMBITI\n(Elenco puntato)\n\n"
                     "### ⚠️ RISCHI\n"
-                    "(ASSOLUTAMENTE NON USARE TABELLE. Elenca i rischi rilevati usando questo formato strutturato per ciascun rischio:\n"
-                    "🔸 **[Nome o sintesi del Rischio]**\n"
-                    "   - **Gravità:** [Alta/Media/Bassa]\n"
-                    "   - **Riferimento:** [Cita la parte di testo o l'articolo coinvolto])\n\n"
-                    "### 💡 AZIONI CORRETTIVE\n"
-                    "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
+                    "🔸 **[Rischio]**\n - **Gravità:** [Alta/Media/Bassa]\n - **Riferimento:** [Testo/Articolo]\n\n"
+                    "### 💡 AZIONI CORRETTIVE\n(Elenco numerato)\n\n"
+                    "### 🔍 APPROFONDIMENTO OPERATORE\n"
+                    "Concludi SEMPRE con 3 domande numerate rivolte all'utente per entrare nel dettaglio tecnico/normativo (es. dataset di addestramento, supervisione umana, logica di inferenza)."
                 )
 
                 model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
