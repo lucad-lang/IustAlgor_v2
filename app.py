@@ -4,7 +4,6 @@ import os
 import tempfile
 import base64
 import time
-import re # <-- NUOVA LIBRERIA PER LA PULIZIA DEL TESTO
 from PIL import Image
 
 # --- 1. CONFIGURAZIONE PAGINA ---
@@ -203,6 +202,7 @@ if api_key:
 
         with st.chat_message("assistant", avatar=AVATAR_AI):
             try:
+                # --- ISTRUZIONI DI SISTEMA AGGIORNATE: NIENTE PIÙ TABELLE ---
                 sys_instr = (
                     f"Sei IusAlgor Pro, un assistente legale esperto. Ti interfacci con l'operatore {st.session_state.user_name}. "
                     "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
@@ -212,8 +212,10 @@ if api_key:
                     "### 🎯 AMBITI\n"
                     "(Fornisci un elenco puntato degli ambiti legali/amministrativi coinvolti)\n\n"
                     "### ⚠️ RISCHI\n"
-                    "(Crea una singola tabella Markdown compatta con tre colonne: 'Rischio Rilevato', 'Gravità (Alta/Media/Bassa)', e 'Riferimento nel testo'. "
-                    "IMPORTANTE: Chiudi la tabella in modo pulito. NON generare righe vuote e ASSOLUTAMENTE NON inserire lunghe sequenze di trattini '-' o pipe '|' alla fine della tabella.)\n\n"
+                    "(ASSOLUTAMENTE NON USARE TABELLE. Elenca i rischi rilevati usando questo formato strutturato per ciascun rischio:\n"
+                    "🔸 **[Nome o sintesi del Rischio]**\n"
+                    "   - **Gravità:** [Alta/Media/Bassa]\n"
+                    "   - **Riferimento:** [Cita la parte di testo o l'articolo coinvolto])\n\n"
                     "### 💡 AZIONI CORRETTIVE\n"
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
@@ -251,13 +253,9 @@ if api_key:
                     
                     status.update(label="Analisi completata con successo!", state="complete", expanded=False)
                 
-                # PULIZIA DEL TESTO DAI TRATTINI INFINITI
-                testo_pulito = response.text
-                testo_pulito = re.sub(r'(\|-{10,}\|?|-{10,}|\|? {0,}-{10,} {0,}\|?)', '', testo_pulito)
-                testo_pulito = re.sub(r'\n{3,}', '\n\n', testo_pulito)
-                
-                st.markdown(testo_pulito)
-                st.session_state.messages.append({"role": "assistant", "content": testo_pulito})
+                # Stampa diretta della risposta senza bisogno di pulizie strane
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
                 
                 for path in tmp_paths:
                     if os.path.exists(path):
