@@ -137,7 +137,7 @@ if api_key:
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
 
-                model = genai.GenerativeModel(model_name='gemini-1.5-flash', system_instruction=sys_instr)
+                model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
                 
                 # Indicatore di stato
                 with st.status("Elaborazione pratica in corso...", expanded=True) as status:
