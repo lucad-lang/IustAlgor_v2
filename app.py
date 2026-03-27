@@ -16,9 +16,9 @@ if not st.session_state.logged_in:
     # INIEZIONE CSS SPECIFICO PER IL LOGIN
     st.markdown("""
     <style>
-    /* Sfondo notturno (gradiente viola/scuro) per tutta la pagina */
+    /* Sfondo elegante (gradiente ardesia scuro/nero) per tutta la pagina */
     .stApp {
-        background: linear-gradient(180deg, #1A0B2E 0%, #3B185F 100%) !important;
+        background: linear-gradient(180deg, #0F172A 0%, #020617 100%) !important;
     }
     
     /* Nasconde la barra laterale e i menu superiori durante il login */
@@ -31,7 +31,7 @@ if not st.session_state.logged_in:
         background-color: #FFFFFF !important;
         padding: 40px 30px !important;
         border-radius: 24px !important;
-        box-shadow: 0px 15px 35px rgba(0,0,0,0.4) !important;
+        box-shadow: 0px 15px 35px rgba(0,0,0,0.6) !important;
         margin-top: -15px;
     }
     
