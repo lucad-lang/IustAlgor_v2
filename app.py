@@ -3,6 +3,7 @@ import google.generativeai as genai
 import os
 import tempfile
 import base64
+import time
 from PIL import Image
 
 # --- 1. CONFIGURAZIONE PAGINA ---
@@ -16,17 +17,12 @@ if 'logged_in' not in st.session_state:
 if not st.session_state.logged_in:
     st.markdown("""
     <style>
-    /* Sfondo elegante ardesia scuro/nero */
     .stApp {
         background: linear-gradient(180deg, #0F172A 0%, #020617 100%) !important;
     }
-    
-    /* Nasconde menu e sidebar durante il login */
     [data-testid="collapsedControl"], section[data-testid="stSidebar"], header {
         display: none !important;
     }
-    
-    /* Card centrale bianca */
     [data-testid="column"]:nth-of-type(2) {
         background-color: #FFFFFF !important;
         padding: 40px 30px !important;
@@ -34,8 +30,6 @@ if not st.session_state.logged_in:
         box-shadow: 0px 15px 35px rgba(0,0,0,0.6) !important;
         margin-top: -15px;
     }
-    
-    /* Testi eleganti in scala di grigi */
     .welcome-title {
         color: #111827 !important; 
         font-size: 32px !important;
@@ -51,8 +45,6 @@ if not st.session_state.logged_in:
         margin-bottom: 25px;
     }
     .stTextInput label p { color: #374151 !important; font-weight: 600; }
-    
-    /* Bottone dorato per richiamare il tema interno */
     div.stButton > button:first-child {
         background: linear-gradient(90deg, #E6B31E 0%, #D4AF37 100%) !important;
         color: #111827 !important;
@@ -71,7 +63,6 @@ if not st.session_state.logged_in:
     </style>
     """, unsafe_allow_html=True)
 
-    # Layout a colonne per centrare il login
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
@@ -110,7 +101,6 @@ if not st.session_state.logged_in:
 # DA QUI IN POI: L'UTENTE È LOGGATO (DASHBOARD PRINCIPALE)
 # =====================================================================
 
-# --- 4. STILE DELLA DASHBOARD PRINCIPALE ---
 st.markdown("""
     <style>
     .stApp { background-color: #1E2328; color: #FFFFFF; }
@@ -127,13 +117,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 5. GESTIONE API KEY ---
 try:
     api_key = st.secrets["GEMINI_API_KEY"]
 except:
     api_key = None
 
-# --- 6. SIDEBAR ---
 with st.sidebar:
     if os.path.exists("logo.png"):
         st.image(Image.open('logo.png'), width=250)
@@ -144,10 +132,8 @@ with st.sidebar:
     if not api_key:
         api_key = st.text_input("🔑 API Key locale", type="password")
 
-    # Caricamento file multipli
     uploaded_files = st.file_uploader("📂 Carica Documenti", type=['pdf', 'txt'], accept_multiple_files=True)
     
-    # Anteprima Documenti
     if uploaded_files:
         with st.expander("👀 Anteprima Documenti"):
             for f in uploaded_files:
@@ -230,7 +216,6 @@ if api_key:
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
 
-                # MODELLO AGGIORNATO A GEMINI 2.5 FLASH
                 model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
                 
                 with st.status("Elaborazione pratica in corso...", expanded=True) as status:
@@ -245,8 +230,19 @@ if api_key:
                                 tmp.write(f.getvalue())
                                 tmp_paths.append(tmp.name)
                             
-                            st.write(f"☁️ Caricamento sul server sicuro: {f.name}...")
+                            st.write(f"☁️ Caricamento di {f.name}...")
                             g_file = genai.upload_file(tmp_paths[-1])
+                            
+                            # --- IL CICLO DI ATTESA ---
+                            while g_file.state.name == "PROCESSING":
+                                st.write(f"⏳ Attesa estrazione testo per {f.name}...")
+                                time.sleep(3) 
+                                g_file = genai.get_file(g_file.name) 
+                            
+                            if g_file.state.name == "FAILED":
+                                st.error(f"❌ Impossibile leggere il file {f.name}")
+                                continue
+                            
                             content_to_send.append(g_file)
                     
                     st.write("🧠 Analisi legale e stesura del responso in corso...")
