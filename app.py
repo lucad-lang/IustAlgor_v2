@@ -135,7 +135,7 @@ with st.sidebar:
     uploaded_files = st.file_uploader("📂 Carica Documenti", type=['pdf', 'txt'], accept_multiple_files=True)
     
     if uploaded_files:
-        with st.expander("👀 Anteprima Documenti"):
+        with st.expander("Anteprima Documenti"):
             for f in uploaded_files:
                 st.markdown(f"**📄 {f.name}**")
                 if f.name.endswith('.txt'):
@@ -148,11 +148,11 @@ with st.sidebar:
                 st.markdown("---")
     
     st.markdown("---")
-    if st.button("🗑️ Nuova Analisi (Svuota Chat)"):
+    if st.button("Svuota Chat"):
         st.session_state.messages = []
         st.rerun()
 
-    if st.button("🚪 Termina Sessione"):
+    if st.button("Termina Sessione"):
         st.session_state.logged_in = False
         st.session_state.messages = [] 
         st.rerun()
@@ -209,7 +209,7 @@ if api_key:
                     "Usa il grassetto per i termini chiave o le leggi citate. "
                     "Se ci sono più documenti, specifica a quale ti stai riferendo durante l'analisi. "
                     "Struttura SEMPRE la tua risposta in queste tre sezioni esatte e NON aggiungere conclusioni o saluti finali:\n\n"
-                    "### 🎯 AMBITI\n"
+                    "### AMBITI\n"
                     "(Fornisci un elenco puntato degli ambiti legali/amministrativi coinvolti)\n\n"
                     "### ⚠️ RISCHI\n"
                     "(ASSOLUTAMENTE NON USARE TABELLE. Elenca i rischi rilevati usando questo formato strutturato per ciascun rischio:\n"
