@@ -4,6 +4,7 @@ import os
 import tempfile
 import base64
 import time
+import re # <-- NUOVA LIBRERIA PER LA PULIZIA DEL TESTO
 from PIL import Image
 
 # --- 1. CONFIGURAZIONE PAGINA ---
@@ -207,11 +208,12 @@ if api_key:
                     "Quando analizzi uno o più documenti, restituisci l'output rigorosamente in formato Markdown. "
                     "Usa il grassetto per i termini chiave o le leggi citate. "
                     "Se ci sono più documenti, specifica a quale ti stai riferendo durante l'analisi. "
-                    "Struttura SEMPRE la tua risposta in queste tre sezioni esatte:\n\n"
+                    "Struttura SEMPRE la tua risposta in queste tre sezioni esatte e NON aggiungere conclusioni o saluti finali:\n\n"
                     "### 🎯 AMBITI\n"
                     "(Fornisci un elenco puntato degli ambiti legali/amministrativi coinvolti)\n\n"
                     "### ⚠️ RISCHI\n"
-                    "(Crea una tabella Markdown con tre colonne: 'Rischio Rilevato', 'Gravità (Alta/Media/Bassa)', e 'Riferimento nel testo')\n\n"
+                    "(Crea una singola tabella Markdown compatta con tre colonne: 'Rischio Rilevato', 'Gravità (Alta/Media/Bassa)', e 'Riferimento nel testo'. "
+                    "IMPORTANTE: Chiudi la tabella in modo pulito. NON generare righe vuote e ASSOLUTAMENTE NON inserire lunghe sequenze di trattini '-' o pipe '|' alla fine della tabella.)\n\n"
                     "### 💡 AZIONI CORRETTIVE\n"
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
@@ -233,7 +235,6 @@ if api_key:
                             st.write(f"☁️ Caricamento di {f.name}...")
                             g_file = genai.upload_file(tmp_paths[-1])
                             
-                            # --- IL CICLO DI ATTESA ---
                             while g_file.state.name == "PROCESSING":
                                 st.write(f"⏳ Attesa estrazione testo per {f.name}...")
                                 time.sleep(3) 
@@ -250,8 +251,13 @@ if api_key:
                     
                     status.update(label="Analisi completata con successo!", state="complete", expanded=False)
                 
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                # PULIZIA DEL TESTO DAI TRATTINI INFINITI
+                testo_pulito = response.text
+                testo_pulito = re.sub(r'(\|-{10,}\|?|-{10,}|\|? {0,}-{10,} {0,}\|?)', '', testo_pulito)
+                testo_pulito = re.sub(r'\n{3,}', '\n\n', testo_pulito)
+                
+                st.markdown(testo_pulito)
+                st.session_state.messages.append({"role": "assistant", "content": testo_pulito})
                 
                 for path in tmp_paths:
                     if os.path.exists(path):
