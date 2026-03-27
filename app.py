@@ -3,7 +3,7 @@ import google.generativeai as genai
 import os
 import tempfile
 import base64
-import timeF
+import time
 from PIL import Image
 
 # --- 1. CONFIGURAZIONE PAGINA ---
