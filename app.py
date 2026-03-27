@@ -35,36 +35,38 @@ if not st.session_state.logged_in:
         margin-top: -15px;
     }
     
-    /* Stile Titolo e Sottotitolo */
+    /* Stile Titolo (Nero scuro elegante) */
     .welcome-title {
-        color: #1A0B2E !important;
+        color: #111827 !important; 
         font-size: 32px !important;
         font-weight: 900 !important;
         text-align: center;
         margin-bottom: 5px;
         letter-spacing: 1px;
     }
+    
+    /* Stile Sottotitolo (Grigio medio) */
     .welcome-sub {
-        color: #A0A0A0 !important;
+        color: #6B7280 !important; 
         text-align: center;
         font-size: 14px !important;
         margin-bottom: 25px;
     }
     
     /* Colore testo delle etichette (email, password) in grigio scuro */
-    .stTextInput label p { color: #555555 !important; font-weight: 600; }
+    .stTextInput label p { color: #374151 !important; font-weight: 600; }
     
-    /* Stile del bottone NEXT -> */
+    /* Stile del bottone NEXT -> (Oro elegante per richiamare il tema interno) */
     div.stButton > button:first-child {
-        background: linear-gradient(90deg, #FF7EB3 0%, #9C27B0 100%) !important;
-        color: white !important;
+        background: linear-gradient(90deg, #E6B31E 0%, #D4AF37 100%) !important;
+        color: #111827 !important; /* Testo scuro per massimo contrasto sull'oro */
         border: none !important;
         border-radius: 30px !important;
         padding: 12px !important;
         width: 100% !important;
         font-weight: 800 !important;
         font-size: 16px !important;
-        box-shadow: 0px 8px 15px rgba(156, 39, 176, 0.4) !important;
+        box-shadow: 0px 8px 15px rgba(212, 175, 55, 0.3) !important;
         transition: transform 0.2s;
     }
     div.stButton > button:first-child:hover {
@@ -96,7 +98,7 @@ if not st.session_state.logged_in:
         with c_left:
             st.checkbox("Remember me")
         with c_right:
-            st.markdown('<p style="text-align: right; margin-top: 10px;"><a href="#" style="color: #9C27B0; font-size: 14px; text-decoration: none; font-weight: bold;">Forgot password?</a></p>', unsafe_allow_html=True)
+            st.markdown('<p style="text-align: right; margin-top: 10px;"><a href="#" style="color: #111827; font-size: 14px; text-decoration: none; font-weight: bold;">Forgot password?</a></p>', unsafe_allow_html=True)
 
         st.write("") # Spazio
 
@@ -155,11 +157,11 @@ with st.sidebar:
     uploaded_file = st.file_uploader("📂 Carica Documento", type=['pdf', 'txt'])
     
     st.markdown("---")
-    if st.button("🗑️ Nuova Analisi (Svuota Chat)"):
+    if st.button("Svuota Chat"):
         st.session_state.messages = []
         st.rerun()
 
-    if st.button("🚪 Termina Sessione"):
+    if st.button("Termina Sessione"):
         st.session_state.logged_in = False
         st.session_state.messages = [] 
         st.rerun()
@@ -224,7 +226,7 @@ if api_key:
                     "(Fornisci un elenco numerato dei passaggi pratici per mitigare i rischi rilevati)."
                 )
 
-                model = genai.GenerativeModel(model_name='gemini-2.5-flash', system_instruction=sys_instr)
+                model = genai.GenerativeModel(model_name='gemini-1.5-flash', system_instruction=sys_instr)
                 
                 with st.status("Elaborazione pratica in corso...", expanded=True) as status:
                     content_to_send = [prompt]
